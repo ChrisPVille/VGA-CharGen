@@ -40,7 +40,7 @@ module fontROM(input clk,
 
     //Reverse the endianness of our glyph as we want to push out the MSB first
     reg[0:FONT_W-1] curGlyph;
-    wire[11:0] effectiveLinearAddr;
+    reg[11:0] effectiveLinearAddr;
 
     //We need to delay the horizPosition by one cycle as the vertical position
     //is used to compute the ROM address, with the result taking one cycle to
@@ -52,10 +52,12 @@ module fontROM(input clk,
     wire we;
     assign we = 0;
 
-    assign effectiveLinearAddr = (page*256*FONT_H)+(char*FONT_H)+vertPos;
-
     //Return bit 'horizPos' of the current character
     assign pixel = curGlyph[delayedHorizPos];
+
+    always @(posedge clk) begin
+        effectiveLinearAddr <= (page*256*FONT_H)+(char*FONT_H)+vertPos;
+    end
 
     always @(posedge clk) begin
         delayedHorizPos <= horizPos;
