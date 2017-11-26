@@ -45,7 +45,7 @@ module fontROM(input clk,
     //We need to delay the horizPosition by one cycle as the vertical position
     //is used to compute the ROM address, with the result taking one cycle to
     //generate.
-    reg[2:0] delayedHorizPos;
+    reg[2:0] delayedHorizPos[0:1];
 
     //It looks like Vivado won't infer block RAM/ROM without a write
     //enable signal, even if it's tied to 0 and the write is 0.
@@ -53,14 +53,15 @@ module fontROM(input clk,
     assign we = 0;
 
     //Return bit 'horizPos' of the current character
-    assign pixel = curGlyph[delayedHorizPos];
+    assign pixel = curGlyph[delayedHorizPos[1]];
 
     always @(posedge clk) begin
         effectiveLinearAddr <= (page*256*FONT_H)+(char*FONT_H)+vertPos;
     end
 
     always @(posedge clk) begin
-        delayedHorizPos <= horizPos;
+        delayedHorizPos[0] <= horizPos;
+        delayedHorizPos[1] <= delayedHorizPos[0];
     end
 
     always @(posedge clk) begin
