@@ -23,15 +23,18 @@
  * limitations under the License.
  */
 
-module vgaEngine (input clk,
+module vgaEngine #(
+                  parameter H_WIDTH = 10,
+                  parameter V_WIDTH = 9)
+                     (input clk,
                       input rst_p,
                       input clk_en,
                       input[3:0] r,
                       input[3:0] g,
                       input[3:0] b,
                       output vertBlanking,
-                      output[9:0] horizPos,
-                      output[8:0] vertPos,
+                      output[H_WIDTH-1:0] horizPos,
+                      output[V_WIDTH-1:0] vertPos,
                       output reg v_sync,
                       output reg h_sync,
                       output reg[3:0] redOut,
@@ -48,18 +51,18 @@ module vgaEngine (input clk,
 
     parameter H_ACTIVE = 640;
     parameter H_FP = 16;
-    parameter H_BLANK = 96;
+    parameter H_SYN = 96;
     parameter H_BP = 48;
-    parameter H_TOTAL = H_ACTIVE+H_FP+H_BLANK+H_BP;
+    parameter H_TOTAL = H_ACTIVE+H_FP+H_SYN+H_BP;
     parameter V_ACTIVE = 480;
     parameter V_FP = 10;
-    parameter V_BLANK = 2;
+    parameter V_SYN = 2;
     parameter V_BP = 29;
-    parameter V_TOTAL = V_ACTIVE+V_FP+V_BLANK+V_BP;
+    parameter V_TOTAL = V_ACTIVE+V_FP+V_SYN+V_BP;
 
     integer i;
-    reg[9:0] horiz_position_pipeline [0:EXT_PIPELINE_DELAY];
-    reg[9:0] vert_position_pipeline [0:EXT_PIPELINE_DELAY];
+    reg[H_WIDTH-1:0] horiz_position_pipeline [0:EXT_PIPELINE_DELAY];
+    reg[V_WIDTH-1:0] vert_position_pipeline [0:EXT_PIPELINE_DELAY];
 
     wire v_sync_pre;
     wire h_sync_pre;
@@ -107,20 +110,20 @@ module vgaEngine (input clk,
     //Sets the h_sync pulse for the duration of H_BLANK after the active period and
     //front porch. Remember, h_sync is active low
     assign h_sync_pre = ~((horiz_position_pipeline[EXT_PIPELINE_DELAY] >= H_ACTIVE+H_FP) &
-                          (horiz_position_pipeline[EXT_PIPELINE_DELAY] < H_ACTIVE+H_FP+H_BLANK));
+                          (horiz_position_pipeline[EXT_PIPELINE_DELAY] < H_ACTIVE+H_FP+H_SYN));
 
     //Sets the v_sync pulse for the duration of V_BLANK after the active period and
     //front porch.
     assign v_sync_pre = ~((vert_position_pipeline[EXT_PIPELINE_DELAY] >= V_ACTIVE+V_FP) &
-                          (vert_position_pipeline[EXT_PIPELINE_DELAY] < V_ACTIVE+V_FP+V_BLANK));
+                          (vert_position_pipeline[EXT_PIPELINE_DELAY] < V_ACTIVE+V_FP+V_SYN));
 
     //Because of the pipeline delay, this signal will start slightly early, but
     //the early assertion still happens inside of the last line's horizontal
     //blanking interval, making it a non issue.
-    assign vertBlanking = (vert_position_pipeline[0] >= 480);
+    assign vertBlanking = (vert_position_pipeline[0] >= V_ACTIVE);
 
     always @(posedge clk) begin
-        if(horiz_position_pipeline[EXT_PIPELINE_DELAY] < 640 & vert_position_pipeline[EXT_PIPELINE_DELAY] < 480) begin
+        if(horiz_position_pipeline[EXT_PIPELINE_DELAY] < H_ACTIVE & vert_position_pipeline[EXT_PIPELINE_DELAY] < V_ACTIVE) begin
             redOut <= r;
             greenOut <= g;
             blueOut <= b;
