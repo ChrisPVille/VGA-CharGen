@@ -53,8 +53,10 @@ module vgaCharGen(
     output VGA_HS,
     output VGA_VS);
 
-    //`include "480.vh" //Load the 640x480 parameters
-    `include "1080.vh" //Load the 1920x1080 parameters
+    //Include the appropriate parameters for the selected resolution (don't
+    //forget to set the input pixel clock appropriately).
+    `include "480.vh" //Load the 640x480 parameters
+    //`include "1080.vh" //Load the 1920x1080 parameters
 
     parameter FONT_PAGES = 1;
     parameter FONT_H = 16;
