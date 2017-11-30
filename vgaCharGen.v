@@ -138,7 +138,7 @@ module vgaCharGen(
     vgaEngine #(.EXT_PIPELINE_DELAY(5), .H_ACTIVE(H_ACTIVE), .H_FP(H_FP),
                 .H_SYN(H_SYN), .H_BP(H_BP), .H_TOTAL(H_TOTAL),
                 .V_ACTIVE(V_ACTIVE), .V_FP(V_FP), .V_SYN(V_SYN), .V_BP(V_BP),
-                .V_TOTAL(V_TOTAL))
+                .V_TOTAL(V_TOTAL), .H_WIDTH(H_WIDTH), .V_WIDTH(V_WIDTH))
       vga1 (.clk(pixel_clk), .rst_p(rst_p), .clk_en(pixel_clkEn),
         .r(pixel_r), .g(pixel_g), .b(pixel_b), .vertBlanking(vBlank),
         .horizPos(horizPixelPos), .vertPos(vertPixelPos), .v_sync(VGA_VS),
