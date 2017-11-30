@@ -41,18 +41,21 @@
  * limitations under the License.
  */
 
-module characterRAM(input cpu_clk,
-                    input vid_clk,
-                    input cpu_we,
-                    input cpu_oe,
-                    input[11:0] cpu_addr,
-                    input[11:0] vid_addr,
-                    input[15:0] cpu_charIn,
-                    output[15:0] cpu_charOut,
-                    output reg[15:0] vid_charOut);
+module characterRAM #(
 
-    parameter N_COL = 80;
-    parameter N_ROW = 30;
+    parameter TEXTADDR_WIDTH = 12,
+    parameter N_COL = 80,
+    parameter N_ROW = 30)
+
+   (input cpu_clk,
+    input vid_clk,
+    input cpu_we,
+    input cpu_oe,
+    input[TEXTADDR_WIDTH-1:0] cpu_addr,
+    input[TEXTADDR_WIDTH-1:0] vid_addr,
+    input[15:0] cpu_charIn,
+    output[15:0] cpu_charOut,
+    output reg[15:0] vid_charOut);
 
     reg[15:0] ram[0:(N_COL*N_ROW)-1]; //2400x16 character RAM
 
@@ -71,11 +74,11 @@ module characterRAM(input cpu_clk,
         vid_charOut <= ram[vid_addr];
     end
 
-    /* //Initial test pattern
+    //Initial test pattern
     integer i;
     initial begin
         for(i = 0; i < (N_COL*N_ROW); i = i+1)
             ram[i] = {i[7:0],i[7:0]}; //Should wrap at 255
-    end */
+    end
 
 endmodule

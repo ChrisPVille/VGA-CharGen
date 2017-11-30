@@ -24,22 +24,18 @@
  */
 
 module vgaEngine #(
-                  parameter H_WIDTH = 10,
-                  parameter V_WIDTH = 9)
-                     (input clk,
-                      input rst_p,
-                      input clk_en,
-                      input[3:0] r,
-                      input[3:0] g,
-                      input[3:0] b,
-                      output vertBlanking,
-                      output[H_WIDTH-1:0] horizPos,
-                      output[V_WIDTH-1:0] vertPos,
-                      output reg v_sync,
-                      output reg h_sync,
-                      output reg[3:0] redOut,
-                      output reg[3:0] greenOut,
-                      output reg[3:0] blueOut);
+    parameter H_WIDTH = 10,
+    parameter V_WIDTH = 9,
+    parameter H_ACTIVE = 640,
+    parameter H_FP = 16,
+    parameter H_SYN = 96,
+    parameter H_BP = 48,
+    parameter H_TOTAL = H_ACTIVE+H_FP+H_SYN+H_BP,
+    parameter V_ACTIVE = 480,
+    parameter V_FP = 10,
+    parameter V_SYN = 2,
+    parameter V_BP = 29,
+    parameter V_TOTAL = V_ACTIVE+V_FP+V_SYN+V_BP,
 
     //The actual generation/lookup parts of the display sequence may be slow
     //so we allow the RGB inputs and v/hSync lines to lag a certain amount
@@ -47,18 +43,22 @@ module vgaEngine #(
     //pixel store N cycles to actually return the RGB values for the given
     //"current" position.  This parameter is the number of cycles from position
     //output till valid pixel data on the inputs.
-    parameter EXT_PIPELINE_DELAY = 0;
+    parameter EXT_PIPELINE_DELAY = 0)
 
-    parameter H_ACTIVE = 640;
-    parameter H_FP = 16;
-    parameter H_SYN = 96;
-    parameter H_BP = 48;
-    parameter H_TOTAL = H_ACTIVE+H_FP+H_SYN+H_BP;
-    parameter V_ACTIVE = 480;
-    parameter V_FP = 10;
-    parameter V_SYN = 2;
-    parameter V_BP = 29;
-    parameter V_TOTAL = V_ACTIVE+V_FP+V_SYN+V_BP;
+   (input clk,
+    input rst_p,
+    input clk_en,
+    input[3:0] r,
+    input[3:0] g,
+    input[3:0] b,
+    output vertBlanking,
+    output[H_WIDTH-1:0] horizPos,
+    output[V_WIDTH-1:0] vertPos,
+    output reg v_sync,
+    output reg h_sync,
+    output reg[3:0] redOut,
+    output reg[3:0] greenOut,
+    output reg[3:0] blueOut);
 
     integer i;
     reg[H_WIDTH-1:0] horiz_position_pipeline [0:EXT_PIPELINE_DELAY];

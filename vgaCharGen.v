@@ -39,7 +39,7 @@ module vgaCharGen(
     input pixel_clkEn,
 
     input cpu_clk,
-    input[11:0] cpu_addr,
+    input[15:0] cpu_addr,
     input cpu_we,
     input cpu_oe,
     input[15:0] cpu_dataIn,
@@ -53,19 +53,28 @@ module vgaCharGen(
     output VGA_HS,
     output VGA_VS);
 
+    //`include "480.vh" //Load the 640x480 parameters
+    `include "1080.vh" //Load the 1920x1080 parameters
+
     parameter FONT_PAGES = 1;
     parameter FONT_H = 16;
     parameter FONT_W = 8;
-    parameter N_COL = 80;
-    parameter N_ROW = 30;
 
-    wire[9:0] horizPixelPos;
-    wire[8:0] vertPixelPos;
+    parameter H_TOTAL = H_ACTIVE+H_FP+H_SYN+H_BP;
+    parameter V_TOTAL = V_ACTIVE+V_FP+V_SYN+V_BP;
+
+    //I believe Vivado still poops itself with clog2 in a localparam 
+    parameter H_WIDTH = $clog2(H_TOTAL);
+    parameter V_WIDTH = $clog2(V_TOTAL);
+    parameter TEXTADDR_WIDTH = $clog2(N_COL*N_ROW);
+
+    wire[H_WIDTH-1:0] horizPixelPos;
+    wire[V_WIDTH-1:0] vertPixelPos;
     wire[15:0] curChar;
 
     reg[7:0] charAttribute[0:1];
 
-    reg[11:0] effectiveCharAddr;
+    reg[TEXTADDR_WIDTH-1:0] effectiveCharAddr;
     reg[2:0] glyphHorizCoord[0:1];
     reg[3:0] glyphVertCoord[0:1];
 
@@ -80,10 +89,11 @@ module vgaCharGen(
     //This takes a combined 2 cycles.
     //(Time since coordinate update at start: 0 cycles)
     always @(posedge pixel_clk) begin
-        effectiveCharAddr <= vertPixelPos[8:4]*N_COL + horizPixelPos[9:3];
+        effectiveCharAddr <= (vertPixelPos>>4)*N_COL + (horizPixelPos>>3);
     end
-    characterRAM #(.N_COL(N_COL), .N_ROW(N_ROW))
-      charRam1 (.cpu_clk(cpu_clk), .cpu_we(cpu_we), .cpu_addr(cpu_addr),
+    characterRAM #(.N_COL(N_COL), .N_ROW(N_ROW),
+                   .TEXTADDR_WIDTH(TEXTADDR_WIDTH))
+      charRam1 (.cpu_clk(cpu_clk), .cpu_we(cpu_we), .cpu_addr(cpu_addr[TEXTADDR_WIDTH-1:0]),
         .cpu_charIn(cpu_dataIn), .cpu_charOut(cpu_dataOut), .cpu_oe(cpu_oe),
         .vid_clk(pixel_clk), .vid_addr(effectiveCharAddr),
         .vid_charOut(curChar));
@@ -125,7 +135,10 @@ module vgaCharGen(
     //Font ROM Lookup (2 cycle) + Font Attribute Application (1 cycle) =
     //5 clock pipeline delay needed from x/y position output till the colored
     //pixel data is ready.
-    vgaEngine #(.EXT_PIPELINE_DELAY(5))
+    vgaEngine #(.EXT_PIPELINE_DELAY(5), .H_ACTIVE(H_ACTIVE), .H_FP(H_FP),
+                .H_SYN(H_SYN), .H_BP(H_BP), .H_TOTAL(H_TOTAL),
+                .V_ACTIVE(V_ACTIVE), .V_FP(V_FP), .V_SYN(V_SYN), .V_BP(V_BP),
+                .V_TOTAL(V_TOTAL))
       vga1 (.clk(pixel_clk), .rst_p(rst_p), .clk_en(pixel_clkEn),
         .r(pixel_r), .g(pixel_g), .b(pixel_b), .vertBlanking(vBlank),
         .horizPos(horizPixelPos), .vertPos(vertPixelPos), .v_sync(VGA_VS),
