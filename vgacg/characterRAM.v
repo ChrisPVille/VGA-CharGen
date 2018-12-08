@@ -42,7 +42,7 @@
  */
 
 module characterRAM #(
-
+    parameter SINGLE_CYCLE_RAM = 1,
     parameter TEXTADDR_WIDTH = 12,
     parameter N_COL = 80,
     parameter N_ROW = 30)
@@ -54,31 +54,46 @@ module characterRAM #(
     input[TEXTADDR_WIDTH-1:0] cpu_addr,
     input[TEXTADDR_WIDTH-1:0] vid_addr,
     input[15:0] cpu_charIn,
-    output[15:0] cpu_charOut,
+    output reg[15:0] cpu_charOut,
     output reg[15:0] vid_charOut);
 
     reg[15:0] ram[0:(N_COL*N_ROW)-1]; //2400x16 character RAM
 
+generate
+if(SINGLE_CYCLE_RAM == 1) begin: fall_through_ram
+
     always @(posedge cpu_clk) begin
-        if(cpu_we) begin
-            ram[cpu_addr] <= cpu_charIn;
+        if(cpu_oe) begin
+            if(cpu_we) begin
+                ram[cpu_addr] <= cpu_charIn;
+            end
         end
     end
 
-    //The use of asynchronous fall-through reads on the CPU port prevents
-    //inferring block-ram. This is unfortunate but necessary for single cycle
-    //CPU designs.
-    assign cpu_charOut = cpu_oe ? ram[cpu_addr] : 16'b0;
-
-    always @(posedge vid_clk) begin
-        vid_charOut <= ram[vid_addr];
-    end
+    always @(*) cpu_charOut = cpu_oe ? ram[cpu_addr] : 16'b0;
 
     //Initial test pattern
     integer i;
     initial begin
         for(i = 0; i < (N_COL*N_ROW); i = i+1)
             ram[i] = {i[7:0],i[7:0]}; //Should wrap at 255
+    end
+
+end else begin: registered_ram
+
+    always @(posedge cpu_clk) begin
+        if(cpu_oe) begin
+            if(cpu_we)
+                ram[cpu_addr] <= cpu_charIn;
+            else
+                cpu_charOut <= ram[cpu_addr];
+        end
+    end
+end
+endgenerate
+
+    always @(posedge vid_clk) begin
+        vid_charOut <= ram[vid_addr];
     end
 
 endmodule

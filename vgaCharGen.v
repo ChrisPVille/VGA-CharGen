@@ -58,6 +58,8 @@ module vgaCharGen(
     `include "480.vh" //Load the 640x480 parameters
     //`include "1080.vh" //Load the 1920x1080 parameters
 
+    parameter SINGLE_CYCLE_DESIGN = 1;
+
     parameter FONT_PAGES = 1;
     parameter FONT_H = 16;
     parameter FONT_W = 8;
@@ -93,7 +95,8 @@ module vgaCharGen(
     always @(posedge pixel_clk) begin
         effectiveCharAddr <= (vertPixelPos>>4)*N_COL + (horizPixelPos>>3);
     end
-    characterRAM #(.N_COL(N_COL), .N_ROW(N_ROW),
+    characterRAM #(.SINGLE_CYCLE_RAM(SINGLE_CYCLE_DESIGN),
+                   .N_COL(N_COL), .N_ROW(N_ROW),
                    .TEXTADDR_WIDTH(TEXTADDR_WIDTH))
       charRam1 (.cpu_clk(cpu_clk), .cpu_we(cpu_we), .cpu_addr(cpu_addr[TEXTADDR_WIDTH-1:0]),
         .cpu_charIn(cpu_dataIn), .cpu_charOut(cpu_dataOut), .cpu_oe(cpu_oe),
